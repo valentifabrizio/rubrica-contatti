@@ -1,0 +1,1022 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rubrica contatti</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Layout: intestazione compatta, barra strumenti, tabella a tutta larghezza con intestazione fissa, paginazione in fondo. */
+  :root {
+    --bg: #f2f5f3;
+    --surface: #ffffff;
+    --fg: #17211d;
+    --muted: #5b6a63;
+    --line: #d8e0db;
+    --accent: #0f6b4f;
+    --accent-fg: #ffffff;
+    --accent-soft: #e2f1ea;
+    --danger: #a4380f;
+    --danger-soft: #fbe9e1;
+    --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1513;
+      --surface: #161e1b;
+      --fg: #e6ede9;
+      --muted: #93a39b;
+      --line: #26332e;
+      --accent: #4cc59a;
+      --accent-fg: #07130d;
+      --accent-soft: #17302a;
+      --danger: #ff9a6b;
+      --danger-soft: #3a1f15;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1513;
+    --surface: #161e1b;
+    --fg: #e6ede9;
+    --muted: #93a39b;
+    --line: #26332e;
+    --accent: #4cc59a;
+    --accent-fg: #07130d;
+    --accent-soft: #17302a;
+    --danger: #ff9a6b;
+    --danger-soft: #3a1f15;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { color-scheme: light; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 14px/1.5 var(--font-body);
+    padding-block: 24px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; display: grid; gap: 16px; }
+
+  header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+  h1 {
+    margin: 0;
+    font: 700 clamp(1.6rem, 1.2rem + 2vw, 2.3rem)/1.1 var(--font-display);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .sub { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  .sub code { font: 500 12px var(--font-mono); background: var(--accent-soft); color: var(--accent); padding: 1px 6px; border-radius: 4px; }
+  .head-actions { display: flex; align-items: center; gap: 8px; }
+
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .status[data-state="ok"] .dot { background: var(--accent); }
+  .status[data-state="err"] .dot { background: var(--danger); }
+  .status[data-state="load"] .dot { animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .25; } }
+
+  button, input, select { font: inherit; color: inherit; }
+  button, select {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 7px 12px;
+    cursor: pointer;
+  }
+  button:hover:not(:disabled), select:hover { border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 500; }
+  button.primary:hover:not(:disabled) { filter: brightness(1.08); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .search { flex: 1 1 260px; min-width: 0; }
+  .search input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 9px 12px;
+  }
+  .search input::placeholder { color: var(--muted); }
+  .hint { color: var(--muted); font-size: 12px; }
+
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+  .table-scroll { overflow: auto; max-height: 68vh; border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { padding: 9px 14px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; max-width: 340px; overflow: hidden; text-overflow: ellipsis; }
+  thead th {
+    position: sticky; top: 0; z-index: 1;
+    background: var(--surface);
+    font: 600 11px var(--font-body);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { color: var(--fg); }
+  thead th[aria-sort] { color: var(--accent); }
+  .arrow { display: inline-block; width: 1em; }
+  tbody tr:hover { background: var(--accent-soft); }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.mono { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+  td.null { color: var(--muted); }
+  td.num { text-align: right; }
+
+  .empty { padding: 40px 20px; text-align: center; color: var(--muted); }
+  .empty strong { display: block; color: var(--fg); font: 600 16px var(--font-display); margin-bottom: 6px; }
+  .error { background: var(--danger-soft); color: var(--danger); border: 1px solid var(--danger); border-radius: 8px; padding: 12px 14px; }
+  .error pre { margin: 6px 0 0; white-space: pre-wrap; font: 12px var(--font-mono); }
+
+  .pager { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; color: var(--muted); font-size: 13px; }
+  .pager .group { display: flex; align-items: center; gap: 8px; }
+
+  dialog { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--fg); padding: 0; width: min(520px, calc(100vw - 32px)); }
+  dialog::backdrop { background: rgb(0 0 0 / .45); }
+  form.cfg { display: grid; gap: 14px; padding: 20px; }
+  form.cfg h2 { margin: 0; font: 700 1.2rem var(--font-display); }
+  form.cfg label { display: grid; gap: 4px; font-weight: 500; font-size: 13px; }
+  form.cfg input { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; font: 13px var(--font-mono); min-width: 0; }
+  form.cfg p { margin: 0; color: var(--muted); font-size: 12px; }
+  .row-end { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+
+  dialog { max-height: calc(100vh - 32px); overflow: auto; }
+  #dlg-new { width: min(680px, calc(100vw - 32px)); }
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .fields label.wide { grid-column: 1 / -1; }
+  #newform input, #newform select, #newform textarea {
+    font: 14px var(--font-body);
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 9px 10px;
+    min-width: 0;
+    width: 100%;
+  }
+  #newform textarea { resize: vertical; }
+  .req { color: var(--danger); }
+  tbody tr { cursor: pointer; }
+  [hidden] { display: none !important; }
+  #app { display: grid; gap: 16px; }
+  .login { max-width: 420px; width: 100%; margin: 24px auto 0; }
+  .login form.cfg { padding: 24px; }
+  #loginform input { font: 14px var(--font-body); background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; min-width: 0; width: 100%; }
+  .who { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; min-width: 0; }
+  #who-email { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  tbody tr.sel, tbody tr.sel:hover { background: var(--accent-soft); outline: 2px solid var(--accent); outline-offset: -2px; }
+  .notice { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px; padding: 10px 14px; font-weight: 500; }
+
+  @media (prefers-reduced-motion: reduce) { .status[data-state="load"] .dot { animation: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Rubrica contatti</h1>
+      <p class="sub">Tabella <code>Contacts</code> su Supabase</p>
+    </div>
+    <div class="head-actions">
+      <span class="status" id="status" data-state="idle"><span class="dot"></span><span id="status-text">Non connesso</span></span>
+      <button id="btn-new" type="button" class="primary" hidden>Nuovo contatto</button>
+      <span class="who" id="who" hidden><span id="who-email"></span><button id="btn-logout" type="button">Esci</button></span>
+      <button id="btn-settings" type="button">Connessione</button>
+    </div>
+  </header>
+
+  <section class="panel login" id="login" hidden>
+    <form class="cfg" id="loginform">
+      <h2>Accedi</h2>
+      <p id="login-note"></p>
+      <label for="lg-email">Email
+        <input id="lg-email" type="email" autocomplete="username" required>
+      </label>
+      <label for="lg-pass">Password
+        <input id="lg-pass" type="password" autocomplete="current-password" required>
+      </label>
+      <div id="lgerr"></div>
+      <div class="row-end">
+        <button type="submit" class="primary" id="lg-go">Accedi</button>
+      </div>
+    </form>
+  </section>
+
+  <div id="app" hidden>
+  <div class="toolbar">
+    <div class="search">
+      <input id="q" type="search" placeholder="Cerca in tutte le colonne di testo" autocomplete="off" aria-label="Cerca nei contatti">
+    </div>
+    <label class="hint" for="size">Righe per pagina</label>
+    <select id="size" aria-label="Righe per pagina">
+      <option>10</option><option selected>25</option><option>50</option><option>100</option>
+    </select>
+    <button id="btn-edit" type="button" disabled title="Seleziona prima una riga" hidden>Modifica selezionato</button>
+    <button id="btn-delete" type="button" disabled hidden>Elimina selezionato</button>
+    <button id="btn-reload" type="button">Aggiorna</button>
+  </div>
+
+  <div id="msg"></div>
+
+  <section class="panel" aria-live="polite">
+    <div class="table-scroll"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+    <div id="empty" class="empty" hidden></div>
+  </section>
+
+  <div class="pager">
+    <span id="range">—</span>
+    <div class="group">
+      <button id="prev" type="button">Precedente</button>
+      <span id="pageinfo"></span>
+      <button id="next" type="button">Successiva</button>
+    </div>
+  </div>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <form class="cfg" id="cfg" method="dialog">
+    <h2>Connessione a Supabase</h2>
+    <label for="cfg-url">Project URL
+      <input id="cfg-url" type="url" placeholder="https://xxxxxxxx.supabase.co" required autocomplete="off">
+    </label>
+    <label for="cfg-key">Chiave anon (public)
+      <input id="cfg-key" type="password" placeholder="eyJhbGciOi..." required autocomplete="off">
+    </label>
+    <p>Usa solo la chiave <b>anon</b>, mai la service_role. L’accesso richiede un utente autenticato con ruolo admin o read_only. I dati di sessione restano nel browser (localStorage).</p>
+    <div class="row-end">
+      <button type="button" id="cfg-cancel">Annulla</button>
+      <button type="submit" class="primary">Salva e carica</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-new">
+  <form class="cfg" id="newform">
+    <h2 id="new-title">Nuovo contatto</h2>
+    <div class="fields" id="fields"></div>
+    <div id="newerr"></div>
+    <p id="new-help"></p>
+    <div class="row-end">
+      <button type="button" id="new-cancel">Annulla</button>
+      <button type="submit" class="primary" id="new-save">Salva contatto</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function () {
+  "use strict";
+
+  // Opzionale: scrivi qui i valori per non doverli inserire ogni volta.
+  var SUPABASE_URL = "";
+  var SUPABASE_ANON_KEY = "";
+  var TABLE = "Contacts";
+
+  var $ = function (id) { return document.getElementById(id); };
+  var state = { url: SUPABASE_URL, key: SUPABASE_ANON_KEY, cols: [], textCols: [], sort: null, dir: "asc", page: 0, size: 25, q: "", total: 0, token: 0, sample: [], schema: null, fields: [], mode: "new", editRow: null, rows: [], sel: null, session: null, role: null };
+
+  var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  var ISO = /^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}(:?\d{2})?)?)?$/;
+
+  function loadCfg() {
+    try {
+      var s = JSON.parse(localStorage.getItem("sb-contacts-cfg") || "null");
+      if (s && s.url && s.key) { state.url = s.url; state.key = s.key; }
+    } catch (e) {}
+  }
+  function saveCfg() {
+    try { localStorage.setItem("sb-contacts-cfg", JSON.stringify({ url: state.url, key: state.key })); } catch (e) {}
+  }
+
+  function setStatus(kind, text) {
+    $("status").dataset.state = kind;
+    $("status-text").textContent = text;
+  }
+  function showError(title, detail) {
+    var box = document.createElement("div");
+    box.className = "error";
+    var b = document.createElement("strong");
+    b.textContent = title;
+    box.appendChild(b);
+    if (detail) { var p = document.createElement("pre"); p.textContent = detail; box.appendChild(p); }
+    $("msg").replaceChildren(box);
+  }
+  function clearError() { $("msg").replaceChildren(); }
+
+  function restBase() {
+    return state.url.trim().replace(/\/+$/, "").replace(/\/rest\/v1$/i, "").replace(/\/+$/, "") + "/rest/v1";
+  }
+  function endpoint(params) {
+    var base = restBase() + "/" + encodeURIComponent(TABLE);
+    return base + "?" + params.toString();
+  }
+  function request(params) {
+    return fetch(endpoint(params), {
+      headers: {
+        apikey: state.key,
+        Authorization: "Bearer " + bearer(),
+        Accept: "application/json",
+        Prefer: "count=exact"
+      }
+    }).then(function (res) {
+      return res.text().then(function (txt) {
+        var body = null;
+        try { body = txt ? JSON.parse(txt) : []; } catch (e) { body = txt; }
+        if (!res.ok) {
+          var msg = (body && body.message) ? body.message : ("HTTP " + res.status);
+          var err = new Error(msg);
+          err.detail = typeof body === "string" ? body : JSON.stringify(body, null, 2);
+          err.status = res.status;
+          throw err;
+        }
+        var cr = res.headers.get("content-range") || "";
+        var m = cr.match(/\/(\d+|\*)$/);
+        return { rows: body, total: m && m[1] !== "*" ? parseInt(m[1], 10) : null };
+      });
+    });
+  }
+
+  function firstValue(c) {
+    for (var i = 0; i < state.sample.length; i++) {
+      var v = state.sample[i][c];
+      if (v !== null && v !== undefined) return v;
+    }
+    return null;
+  }
+  function propOf(c) { return state.schema && state.schema.props[c] ? state.schema.props[c] : null; }
+  function isTextCol(c) {
+    var p = propOf(c);
+    if (p) return p.type === "string" && !p.enum && !/uuid|date|time/.test(p.format || "");
+    var v = firstValue(c);
+    return typeof v === "string" && !UUID.test(v) && !ISO.test(v);
+  }
+  function detectColumns() {
+    state.cols = state.sample.length ? Object.keys(state.sample[0]) : (state.schema ? Object.keys(state.schema.props) : []);
+    state.textCols = state.cols.filter(isTextCol);
+    var pref = ["created_at", "id"];
+    state.sort = null;
+    for (var i = 0; i < pref.length; i++) { if (state.cols.indexOf(pref[i]) >= 0) { state.sort = pref[i]; break; } }
+    if (!state.sort) state.sort = state.cols[0];
+    state.dir = state.sort === "created_at" ? "desc" : "asc";
+  }
+
+  function fmt(col, v) {
+    var td = document.createElement("td");
+    if (v === null || v === undefined || v === "") { td.className = "null"; td.textContent = "—"; return td; }
+    if (typeof v === "boolean") { td.textContent = v ? "sì" : "no"; return td; }
+    if (typeof v === "number") { td.className = "num"; td.textContent = v.toLocaleString("it-IT"); return td; }
+    if (typeof v === "object") { td.className = "mono"; td.textContent = JSON.stringify(v); td.title = td.textContent; return td; }
+    var s = String(v);
+    if (UUID.test(s)) { td.className = "mono"; td.textContent = s.slice(0, 8) + "…"; td.title = s; return td; }
+    if (ISO.test(s) && s.length > 9) {
+      var d = new Date(s);
+      if (!isNaN(d)) {
+        td.textContent = s.length === 10 ? d.toLocaleDateString("it-IT") : d.toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" });
+        td.title = s;
+        return td;
+      }
+    }
+    td.textContent = s;
+    td.title = s;
+    return td;
+  }
+
+  function renderHead() {
+    var tr = document.createElement("tr");
+    state.cols.forEach(function (c) {
+      var th = document.createElement("th");
+      th.scope = "col";
+      th.tabIndex = 0;
+      var label = document.createElement("span");
+      label.textContent = c.replace(/_/g, " ");
+      var arrow = document.createElement("span");
+      arrow.className = "arrow";
+      if (c === state.sort) {
+        th.setAttribute("aria-sort", state.dir === "asc" ? "ascending" : "descending");
+        arrow.textContent = state.dir === "asc" ? " ↑" : " ↓";
+      }
+      th.append(label, arrow);
+      var go = function () {
+        if (state.sort === c) state.dir = state.dir === "asc" ? "desc" : "asc";
+        else { state.sort = c; state.dir = "asc"; }
+        state.page = 0;
+        load();
+      };
+      th.addEventListener("click", go);
+      th.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+      tr.appendChild(th);
+    });
+    $("tbl").tHead.replaceChildren(tr);
+  }
+
+  function renderBody(rows) {
+    state.rows = rows;
+    var frag = document.createDocumentFragment();
+    rows.forEach(function (r, idx) {
+      var tr = document.createElement("tr");
+      tr.tabIndex = 0;
+      state.cols.forEach(function (c) { tr.appendChild(fmt(c, r[c])); });
+      tr.addEventListener("click", function () { selectRow(idx); });
+      tr.addEventListener("dblclick", function () { selectRow(idx); openEdit(); });
+      tr.addEventListener("keydown", function (e) {
+        if (e.key === " ") { e.preventDefault(); selectRow(idx); }
+        else if (e.key === "Enter") { selectRow(idx); openEdit(); }
+      });
+      frag.appendChild(tr);
+    });
+    $("tbl").tBodies[0].replaceChildren(frag);
+    selectRow(null);
+  }
+
+  function renderPager(count) {
+    var from = count ? state.page * state.size + 1 : 0;
+    var to = state.page * state.size + count;
+    var total = state.total;
+    $("range").textContent = count ? ("Contatti " + from + "–" + to + (total !== null ? " di " + total.toLocaleString("it-IT") : "")) : "Nessun risultato";
+    var pages = total !== null ? Math.max(1, Math.ceil(total / state.size)) : null;
+    $("pageinfo").textContent = pages ? ("Pagina " + (state.page + 1) + " di " + pages) : ("Pagina " + (state.page + 1));
+    $("prev").disabled = state.page === 0;
+    $("next").disabled = pages ? state.page + 1 >= pages : count < state.size;
+  }
+
+  function showEmpty(kind) {
+    var el = $("empty");
+    el.hidden = false;
+    el.replaceChildren();
+    var s = document.createElement("strong");
+    var p = document.createElement("span");
+    if (kind === "setup") {
+      s.textContent = "Collega il tuo progetto Supabase";
+      p.textContent = "Premi Connessione e inserisci Project URL e chiave anon.";
+    } else if (state.q) {
+      s.textContent = "Nessun contatto corrisponde a “" + state.q + "”";
+      p.textContent = "Prova con un altro termine.";
+    } else {
+      s.textContent = "La tabella non restituisce righe";
+      p.textContent = "Se ti aspettavi dei dati, verifica che l’utente abbia app_metadata.role impostato su admin o read_only e che le policy RLS consentano la lettura.";
+    }
+    el.append(s, p);
+  }
+
+  function buildParams(limitOnly) {
+    var p = new URLSearchParams();
+    p.set("select", "*");
+    if (limitOnly) { p.set("limit", "20"); return p; }
+    if (state.sort) p.set("order", state.sort + "." + state.dir + ".nullslast");
+    p.set("limit", String(state.size));
+    p.set("offset", String(state.page * state.size));
+    var q = state.q.trim().replace(/[\\"]/g, "");
+    if (q && state.textCols.length) {
+      p.set("or", "(" + state.textCols.map(function (c) { return c + '.ilike."*' + q + '*"'; }).join(",") + ")");
+    }
+    return p;
+  }
+
+  function load() {
+    if (!cfgOk() || !state.session) { showLogin(); return Promise.resolve(); }
+    var my = ++state.token;
+    setStatus("load", "Caricamento…");
+    clearError();
+    var ready = refreshIfNeeded(false).then(function (ok) {
+      if (!ok) { var se = new Error("Sessione scaduta"); se.silent = true; throw se; }
+      if (state.cols.length) return null;
+      return Promise.all([fetchSchema(), request(buildParams(true))]).then(function (res) {
+        state.schema = res[0];
+        state.sample = res[1].rows;
+        detectColumns();
+      });
+    });
+    return ready.then(function () {
+      return request(buildParams(false));
+    }).then(function (r) {
+      if (my !== state.token) return;
+      if (!state.cols.length && r.rows.length) { state.sample = r.rows; detectColumns(); }
+      state.total = r.total;
+      renderHead();
+      renderBody(r.rows);
+      renderPager(r.rows.length);
+      if (r.rows.length) $("empty").hidden = true; else showEmpty("empty");
+      setStatus("ok", state.total !== null ? (state.total.toLocaleString("it-IT") + " contatti") : "Connesso");
+    }).catch(function (e) {
+      if (my !== state.token || e.silent) return;
+      if (state.session && /jwt/i.test(e.message || "")) { signOutLocal("Sessione scaduta. Accedi di nuovo."); return; }
+      setStatus("err", "Errore");
+      var hint = e.status === 401 || e.status === 403 ? "Chiave non valida o accesso negato dalle policy RLS." :
+                 e.status === 404 ? "Tabella o URL non trovati. Controlla il Project URL e il nome della tabella." :
+                 e.name === "TypeError" ? "Richiesta non riuscita. Controlla il Project URL e la connessione di rete." : "Interrogazione non riuscita.";
+      showError(hint, e.detail || e.message);
+    });
+  }
+
+  function cfgOk() { return !!(state.url && state.key); }
+  function bearer() { return state.session ? state.session.access_token : state.key; }
+  function authBase() { return restBase().replace(/\/rest\/v1$/, "") + "/auth/v1"; }
+
+  // Il ruolo nel browser serve solo a mostrare/nascondere i comandi. La sicurezza vera è nelle policy RLS.
+  function roleFromToken(token) {
+    try {
+      var part = token.split(".")[1];
+      if (!part) return null;
+      part = part.replace(/-/g, "+").replace(/_/g, "/");
+      while (part.length % 4) part += "=";
+      var payload = JSON.parse(decodeURIComponent(escape(atob(part))));
+      var role = payload && payload.app_metadata && payload.app_metadata.role;
+      return role === "admin" || role === "read_only" ? role : null;
+    } catch (e) { return null; }
+  }
+  function isAdmin() { return !!state.session && state.role === "admin"; }
+
+  function loadSession() {
+    try {
+      var s = JSON.parse(localStorage.getItem("sb-contacts-session") || "null");
+      if (s && s.access_token && s.refresh_token) {
+        state.session = s;
+        state.role = roleFromToken(s.access_token);
+      }
+    } catch (e) {}
+  }
+  function persistSession() {
+    try {
+      if (state.session) localStorage.setItem("sb-contacts-session", JSON.stringify(state.session));
+      else localStorage.removeItem("sb-contacts-session");
+    } catch (e) {}
+  }
+  function storeSession(b) {
+    state.session = {
+      access_token: b.access_token,
+      refresh_token: b.refresh_token,
+      expires_at: b.expires_at || Math.floor(Date.now() / 1000) + (b.expires_in || 3600),
+      email: (b.user && b.user.email) || (state.session && state.session.email) || ""
+    };
+    state.role = roleFromToken(state.session.access_token);
+    persistSession();
+  }
+
+  function setAuthed(on) {
+    $("app").hidden = !on;
+    $("login").hidden = on;
+    $("who").hidden = !on;
+    $("btn-new").hidden = !on || !isAdmin();
+    $("btn-edit").hidden = !on || !isAdmin();
+    $("btn-delete").hidden = !on || !isAdmin();
+    $("who-email").textContent = on && state.session
+      ? state.session.email + " · " + (state.role === "admin" ? "Admin" : state.role === "read_only" ? "Sola lettura" : "Ruolo non valido")
+      : "";
+    if (!on) setStatus("idle", "Non connesso");
+  }
+  function showLogin(note) {
+    setAuthed(false);
+    $("login-note").textContent = note || (cfgOk()
+      ? "Inserisci le credenziali del tuo account."
+      : "Imposta prima l'URL e la chiave del progetto con il pulsante Connessione.");
+  }
+  function signOutLocal(note) {
+    state.session = null;
+    state.role = null;
+    persistSession();
+    state.token++;
+    state.cols = []; state.sample = []; state.schema = null; state.rows = []; state.sel = null; state.page = 0;
+    $("tbl").tHead.replaceChildren();
+    $("tbl").tBodies[0].replaceChildren();
+    $("q").value = ""; state.q = "";
+    clearError();
+    showLogin(note);
+  }
+  function signOut() {
+    var t = state.session && state.session.access_token;
+    if (t && cfgOk()) {
+      fetch(authBase() + "/logout", { method: "POST", headers: { apikey: state.key, Authorization: "Bearer " + t } }).catch(function () {});
+    }
+    signOutLocal("");
+  }
+  function refreshIfNeeded(force) {
+    var s = state.session;
+    if (!s) return Promise.resolve(false);
+    if (!force && s.expires_at - Date.now() / 1000 > 120) return Promise.resolve(true);
+    return fetch(authBase() + "/token?grant_type=refresh_token", {
+      method: "POST",
+      headers: { apikey: state.key, "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: s.refresh_token })
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (b) { return { ok: res.ok, b: b }; });
+    }).then(function (r) {
+      if (!r.ok || !r.b.access_token) { signOutLocal("Sessione scaduta. Accedi di nuovo."); return false; }
+      storeSession(r.b);
+      if (!state.role) {
+        signOutLocal("Ruolo non valido nella sessione. Accedi di nuovo dopo aver verificato app_metadata.role in Supabase.");
+        return false;
+      }
+      setAuthed(true);
+      return true;
+    }).catch(function () { return true; });
+  }
+  function loginError(b, network) {
+    var code = b && (b.error_code || b.error) || "";
+    var text;
+    if (network) text = "Richiesta non riuscita. Controlla l'URL del progetto e la connessione di rete.";
+    else if (/invalid_credentials|invalid_grant/.test(code)) text = "Email o password non corretti.";
+    else if (code === "email_not_confirmed") text = "Email non ancora confermata. Conferma l'indirizzo dal messaggio ricevuto.";
+    else text = (b && (b.msg || b.error_description || b.message)) || "Accesso non riuscito.";
+    var box = document.createElement("div");
+    box.className = "error";
+    box.textContent = text;
+    $("lgerr").replaceChildren(box);
+  }
+
+  $("loginform").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!cfgOk()) { $("btn-settings").click(); return; }
+    var btn = $("lg-go");
+    $("lgerr").replaceChildren();
+    btn.disabled = true;
+    btn.textContent = "Accesso…";
+    fetch(authBase() + "/token?grant_type=password", {
+      method: "POST",
+      headers: { apikey: state.key, "Content-Type": "application/json" },
+      body: JSON.stringify({ email: $("lg-email").value.trim(), password: $("lg-pass").value })
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (b) { return { ok: res.ok, b: b }; });
+    }).then(function (r) {
+      if (!r.ok || !r.b.access_token) { loginError(r.b, false); return; }
+      storeSession(r.b);
+      $("lg-pass").value = "";
+      if (!state.role) {
+        signOutLocal("Account senza ruolo valido. In Supabase assegna app_metadata.role = admin oppure read_only, poi accedi di nuovo.");
+        return;
+      }
+      state.cols = []; state.page = 0;
+      setAuthed(true);
+      load();
+    }).catch(function () {
+      loginError(null, true);
+    }).then(function () {
+      btn.disabled = false;
+      btn.textContent = "Accedi";
+    });
+  });
+  $("btn-logout").addEventListener("click", signOut);
+
+  function pkCols() {
+    var out = [];
+    if (state.schema) {
+      Object.keys(state.schema.props).forEach(function (c) {
+        if (/<pk/.test(state.schema.props[c].description || "")) out.push(c);
+      });
+    }
+    if (!out.length && state.cols.indexOf("id") >= 0) out.push("id");
+    return out;
+  }
+  function pkQuery(row) {
+    var cols = pkCols();
+    if (!cols.length) return null;
+    var p = new URLSearchParams();
+    for (var i = 0; i < cols.length; i++) {
+      var v = row[cols[i]];
+      if (v === null || v === undefined) return null;
+      p.set(cols[i], "eq." + v);
+    }
+    return p.toString();
+  }
+  function toFieldValue(f, v) {
+    if (v === null || v === undefined) return "";
+    if (f.kind === "bool") return v ? "true" : "false";
+    if (f.kind === "json") return typeof v === "string" ? v : JSON.stringify(v, null, 2);
+    if (f.kind === "date") return String(v).slice(0, 10);
+    if (f.kind === "datetime") {
+      var d = new Date(v);
+      if (isNaN(d)) return "";
+      var z = function (n) { return String(n).padStart(2, "0"); };
+      return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate()) + "T" + z(d.getHours()) + ":" + z(d.getMinutes());
+    }
+    return String(v);
+  }
+  function selectRow(i) {
+    state.sel = i;
+    Array.prototype.forEach.call($("tbl").tBodies[0].rows, function (tr, k) {
+      tr.classList.toggle("sel", k === i);
+    });
+    $("btn-edit").disabled = i === null || !isAdmin();
+    $("btn-delete").disabled = i === null || !isAdmin();
+  }
+  function setMode(edit) {
+    state.mode = edit ? "edit" : "new";
+    $("new-title").textContent = edit ? "Modifica contatto" : "Nuovo contatto";
+    $("new-help").textContent = edit
+      ? "I campi con * sono obbligatori. Vengono salvati solo i campi che modifichi. Se svuoti un campo, il valore diventa vuoto."
+      : "I campi con * sono obbligatori. I campi lasciati vuoti non vengono inviati e il database applica i valori predefiniti.";
+    $("new-save").textContent = edit ? "Salva modifiche" : "Salva contatto";
+  }
+  function openEdit() {
+    if (!isAdmin()) { showError("Operazione non consentita", "Solo un admin può modificare i contatti."); return; }
+    var row = state.sel === null ? null : state.rows[state.sel];
+    if (!row) return;
+    if (!pkCols().length) {
+      showError("Non posso modificare questo record", "Non trovo la chiave primaria della tabella (nessuna colonna id).");
+      return;
+    }
+    state.editRow = row;
+    $("newform").reset();
+    $("newerr").replaceChildren();
+    setMode(true);
+    buildFields(row);
+    $("dlg-new").showModal();
+  }
+
+  function fetchSchema() {
+    return fetch(restBase() + "/", {
+      headers: { apikey: state.key, Authorization: "Bearer " + bearer(), Accept: "application/openapi+json" }
+    }).then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (spec) {
+        var def = spec && spec.definitions && spec.definitions[TABLE];
+        return def && def.properties ? { props: def.properties, required: def.required || [] } : null;
+      })
+      .catch(function () { return null; });
+  }
+
+  var AUTO = ["id", "created_at", "updated_at"];
+  var AUTODEF = /nextval|gen_random_uuid|uuid_generate|now\(\)|current_timestamp/i;
+
+  function describeFields(editing) {
+    var req = state.schema ? state.schema.required : [];
+    var out = [];
+    state.cols.forEach(function (c) {
+      var p = propOf(c);
+      var def = p && p.default !== undefined && p.default !== null ? String(p.default) : "";
+      var pk = !!(p && /<pk/.test(p.description || ""));
+      if (AUTO.indexOf(c) >= 0 || (def && (pk || AUTODEF.test(def)))) return;
+      if (editing && pkCols().indexOf(c) >= 0) return;
+      var v = firstValue(c);
+      var kind = "text";
+      if (p) {
+        if (p.type === "array") return;
+        if (p.type === "boolean") kind = "bool";
+        else if (p.type === "integer" || p.type === "number") kind = "number";
+        else if (p.type === "object" || /^json/.test(p.format || "")) kind = "json";
+        else if (/^timestamp/.test(p.format || "")) kind = "datetime";
+        else if (p.format === "date") kind = "date";
+      } else if (typeof v === "boolean") kind = "bool";
+      else if (typeof v === "number") kind = "number";
+      else if (v !== null && typeof v === "object") kind = "json";
+      else if (typeof v === "string" && ISO.test(v)) kind = v.length === 10 ? "date" : "datetime";
+      if (kind === "text") {
+        if (/mail/i.test(c)) kind = "email";
+        else if (/tel|phone|cell|mobile/i.test(c)) kind = "tel";
+        else if (/note|descr|commento|nota|messaggio/i.test(c)) kind = "textarea";
+      }
+      out.push({ name: c, label: c.replace(/_/g, " "), kind: kind, required: req.indexOf(c) >= 0 });
+    });
+    return out;
+  }
+
+  function buildFields(row) {
+    var box = $("fields");
+    box.replaceChildren();
+    state.fields = describeFields(!!row);
+    $("new-save").disabled = !state.fields.length;
+    if (!state.fields.length) {
+      var p = document.createElement("p");
+      p.textContent = "Le colonne della tabella non sono ancora note. Attendi il caricamento dei contatti e riprova.";
+      box.appendChild(p);
+      return;
+    }
+    var types = { number: "number", date: "date", datetime: "datetime-local", email: "email", tel: "tel", text: "text" };
+    state.fields.forEach(function (f, i) {
+      var lab = document.createElement("label");
+      lab.htmlFor = "f-" + i;
+      var span = document.createElement("span");
+      span.textContent = f.label;
+      if (f.required) {
+        var star = document.createElement("span");
+        star.className = "req";
+        star.textContent = " *";
+        span.appendChild(star);
+      }
+      var el;
+      if (f.kind === "textarea" || f.kind === "json") {
+        el = document.createElement("textarea");
+        el.rows = 3;
+        lab.className = "wide";
+        if (f.kind === "json") el.placeholder = "JSON, ad esempio {\"chiave\": \"valore\"}";
+      } else if (f.kind === "bool") {
+        el = document.createElement("select");
+        [["", "Non specificato"], ["true", "Sì"], ["false", "No"]].forEach(function (o) {
+          var op = document.createElement("option");
+          op.value = o[0];
+          op.textContent = o[1];
+          el.appendChild(op);
+        });
+      } else {
+        el = document.createElement("input");
+        el.type = types[f.kind] || "text";
+        if (f.kind === "number") el.step = "any";
+      }
+      el.id = "f-" + i;
+      el.name = f.name;
+      if (row) {
+        var pv = toFieldValue(f, row[f.name]);
+        el.value = pv;
+        f.orig = pv;
+      }
+      if (f.required) el.required = true;
+      lab.append(span, el);
+      box.appendChild(lab);
+    });
+  }
+
+  function collect() {
+    var body = {};
+    state.fields.forEach(function (f, i) {
+      var v = $("f-" + i).value.trim();
+      if (state.mode === "edit") {
+        if (v === (f.orig || "").trim()) return;
+        if (v === "") { body[f.name] = null; return; }
+      } else if (v === "") return;
+      if (f.kind === "number") {
+        var n = Number(v);
+        if (isNaN(n)) throw new Error(f.label + ": numero non valido");
+        body[f.name] = n;
+      } else if (f.kind === "bool") {
+        body[f.name] = v === "true";
+      } else if (f.kind === "datetime") {
+        body[f.name] = new Date(v).toISOString();
+      } else if (f.kind === "json") {
+        try { body[f.name] = JSON.parse(v); } catch (e) { throw new Error(f.label + ": JSON non valido"); }
+      } else {
+        body[f.name] = v;
+      }
+    });
+    return body;
+  }
+
+  function newError(title, detail) {
+    var box = document.createElement("div");
+    box.className = "error";
+    var b = document.createElement("strong");
+    b.textContent = title;
+    box.appendChild(b);
+    if (detail) { var p = document.createElement("pre"); p.textContent = detail; box.appendChild(p); }
+    $("newerr").replaceChildren(box);
+  }
+
+  function showNotice(text) {
+    var n = document.createElement("div");
+    n.className = "notice";
+    n.textContent = text;
+    $("msg").replaceChildren(n);
+    setTimeout(function () { if (n.parentNode) n.remove(); }, 5000);
+  }
+
+  $("btn-new").addEventListener("click", function () {
+    if (!isAdmin()) { showError("Operazione non consentita", "Solo un admin può creare contatti."); return; }
+    if (!state.url || !state.key) { $("btn-settings").click(); return; }
+    $("newform").reset();
+    $("newerr").replaceChildren();
+    setMode(false);
+    buildFields();
+    $("dlg-new").showModal();
+  });
+  $("btn-edit").addEventListener("click", openEdit);
+  $("btn-delete").addEventListener("click", function () {
+    if (!isAdmin()) { showError("Operazione non consentita", "Solo un admin può eliminare contatti."); return; }
+    var row = state.sel === null ? null : state.rows[state.sel];
+    if (!row) return;
+    var pkq = pkQuery(row);
+    if (!pkq) { showError("Non posso eliminare questo record", "Non trovo la chiave primaria della tabella (nessuna colonna id). "); return; }
+    if (!window.confirm("Vuoi eliminare definitivamente il contatto selezionato? Questa operazione non si può annullare.")) return;
+    var btn = $("btn-delete");
+    btn.disabled = true;
+    fetch(restBase() + "/" + encodeURIComponent(TABLE) + "?" + pkq, {
+      method: "DELETE",
+      headers: { apikey: state.key, Authorization: "Bearer " + bearer(), Prefer: "return=representation" }
+    }).then(function (res) {
+      return res.text().then(function (txt) {
+        var data = null;
+        try { data = txt ? JSON.parse(txt) : []; } catch (e) { data = { message: txt }; }
+        if (!res.ok) throw new Error((data && (data.message || data.details)) || ("HTTP " + res.status));
+        if (Array.isArray(data) && data.length === 0) throw new Error("Nessuna riga eliminata: controlla la chiave primaria e la policy RLS DELETE.");
+        return data;
+      });
+    }).then(function () {
+      state.sel = null;
+      if (state.page > 0 && state.rows.length === 1) state.page--;
+      load();
+      showNotice("Contatto eliminato.");
+    }).catch(function (err) {
+      showError("Eliminazione non riuscita", err.message || "Controlla la connessione e le policy RLS.");
+    }).then(function () { btn.disabled = state.sel === null || !isAdmin(); });
+  });
+  $("new-cancel").addEventListener("click", function () { $("dlg-new").close(); });
+  $("newform").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!isAdmin()) { newError("Operazione non consentita", "Solo un admin può creare o modificare contatti."); return; }
+    $("newerr").replaceChildren();
+    var body;
+    try { body = collect(); } catch (ex) { newError(ex.message); return; }
+    var edit = state.mode === "edit";
+    if (!Object.keys(body).length) { newError(edit ? "Nessuna modifica da salvare." : "Compila almeno un campo."); return; }
+    var target = restBase() + "/" + encodeURIComponent(TABLE);
+    if (edit) {
+      var pkq = pkQuery(state.editRow);
+      if (!pkq) { newError("Impossibile identificare il record.", "Non trovo la chiave primaria della tabella (colonna id)."); return; }
+      target += "?" + pkq;
+    }
+    var btn = $("new-save");
+    btn.disabled = true;
+    btn.textContent = "Salvataggio…";
+    fetch(target, {
+      method: edit ? "PATCH" : "POST",
+      headers: {
+        apikey: state.key,
+        Authorization: "Bearer " + bearer(),
+        "Content-Type": "application/json",
+        Prefer: edit ? "return=representation" : "return=minimal"
+      },
+      body: JSON.stringify(body)
+    }).then(function (res) {
+      if (res.ok) {
+        if (!edit) return null;
+        return res.json().then(function (rows) { return rows && rows.length ? null : { empty: true }; });
+      }
+      return res.text().then(function (t) {
+        var b;
+        try { b = JSON.parse(t); } catch (x) { b = { message: t }; }
+        return { status: res.status, body: b };
+      });
+    }).then(function (fail) {
+      if (!fail) {
+        $("dlg-new").close();
+        if (!edit) state.page = 0;
+        load();
+        showNotice(edit ? "Contatto aggiornato." : "Contatto aggiunto.");
+        return;
+      }
+      if (fail.empty) {
+        newError("Nessuna riga aggiornata.", "Controlla che il record esista e che le policy RLS UPDATE consentano l'operazione all'admin.");
+        return;
+      }
+      var b = fail.body || {};
+      var rls = fail.status === 401 || fail.status === 403 || b.code === "42501";
+      newError(rls ? "Operazione negata dalle autorizzazioni Supabase (RLS/grant). Verifica il ruolo admin e le policy." : "Salvataggio non riuscito.",
+        [b.message, b.details, b.hint].filter(Boolean).join("\n"));
+    }).catch(function () {
+      newError("Richiesta non riuscita. Controlla la connessione di rete.");
+    }).then(function () {
+      btn.disabled = false;
+      btn.textContent = edit ? "Salva modifiche" : "Salva contatto";
+    });
+  });
+
+  var timer = null;
+  $("q").addEventListener("input", function (e) {
+    clearTimeout(timer);
+    timer = setTimeout(function () { state.q = e.target.value; state.page = 0; load(); }, 300);
+  });
+  $("size").addEventListener("change", function (e) { state.size = parseInt(e.target.value, 10); state.page = 0; load(); });
+  $("prev").addEventListener("click", function () { if (state.page > 0) { state.page--; load(); } });
+  $("next").addEventListener("click", function () { state.page++; load(); });
+  $("btn-reload").addEventListener("click", function () { state.cols = []; load(); });
+
+  var dlg = $("dlg");
+  $("btn-settings").addEventListener("click", function () {
+    $("cfg-url").value = state.url;
+    $("cfg-key").value = state.key;
+    dlg.showModal();
+  });
+  $("cfg-cancel").addEventListener("click", function () { dlg.close(); });
+  $("cfg").addEventListener("submit", function () {
+    var newUrl = $("cfg-url").value.trim();
+    var newKey = $("cfg-key").value.trim();
+    var changed = newUrl !== state.url || newKey !== state.key;
+    state.url = newUrl;
+    state.key = newKey;
+    state.cols = []; state.page = 0;
+    saveCfg();
+    if (changed && state.session) { signOutLocal("Connessione modificata. Accedi di nuovo."); return; }
+    if (state.session) load(); else showLogin();
+  });
+
+  loadCfg();
+  loadSession();
+  if (state.session && cfgOk()) {
+    if (!state.role) signOutLocal("La sessione salvata non contiene un ruolo valido. Accedi di nuovo dopo aver assegnato app_metadata.role in Supabase.");
+    else { setAuthed(true); load(); }
+  } else showLogin();
+  setInterval(function () { if (state.session) refreshIfNeeded(false); }, 30000);
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && state.session) refreshIfNeeded(false);
+  });
+})();
+</script>
+</body>
+</html>
