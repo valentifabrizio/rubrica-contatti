@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <title>Rubrica contatti</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -96,6 +97,8 @@
   button:disabled { opacity: .45; cursor: default; }
   button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 500; }
   button.primary:hover:not(:disabled) { filter: brightness(1.08); }
+  button.danger { color: var(--danger); border-color: var(--danger); }
+  button.danger:hover:not(:disabled) { background: var(--danger-soft); border-color: var(--danger); }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
@@ -222,7 +225,7 @@
       <option>10</option><option selected>25</option><option>50</option><option>100</option>
     </select>
     <button id="btn-edit" type="button" disabled title="Seleziona prima una riga" hidden>Modifica selezionato</button>
-    <button id="btn-delete" type="button" disabled hidden>Elimina selezionato</button>
+    <button id="btn-delete" type="button" class="danger" disabled hidden>Elimina selezionato</button>
     <button id="btn-reload" type="button">Aggiorna</button>
   </div>
 
@@ -428,10 +431,10 @@
       tr.tabIndex = 0;
       state.cols.forEach(function (c) { tr.appendChild(fmt(c, r[c])); });
       tr.addEventListener("click", function () { selectRow(idx); });
-      tr.addEventListener("dblclick", function () { selectRow(idx); openEdit(); });
+      tr.addEventListener("dblclick", function () { selectRow(idx); if (isAdmin()) openEdit(); });
       tr.addEventListener("keydown", function (e) {
         if (e.key === " ") { e.preventDefault(); selectRow(idx); }
-        else if (e.key === "Enter") { selectRow(idx); openEdit(); }
+        else if (e.key === "Enter") { selectRow(idx); if (isAdmin()) openEdit(); }
       });
       frag.appendChild(tr);
     });
