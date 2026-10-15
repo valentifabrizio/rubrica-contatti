@@ -281,9 +281,12 @@
 (function () {
   "use strict";
 
-  // Opzionale: scrivi qui i valori per non doverli inserire ogni volta.
-  var SUPABASE_URL = "";
-  var SUPABASE_ANON_KEY = "";
+  // Imposta qui URL e chiave anon del progetto. Quando sono compilati entrambi,
+  // il pulsante Connessione sparisce e i valori salvati nel browser vengono ignorati.
+  // Usa solo la chiave anon (o publishable), mai service_role o secret.
+  var SUPABASE_URL = "https://jfkppygootbwniitcilv.supabase.co";
+  var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impma3BweWdvb3Rid25paXRjaWx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNTI4ODEsImV4cCI6MjEwNzYyODg4MX0.xVY2NwFaSDSjwnnqUz1zNlUl9Ldvw1j57CWFpySL33U";
+  var FIXED = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
   var TABLE = "Contacts";
 
   var $ = function (id) { return document.getElementById(id); };
@@ -293,6 +296,7 @@
   var ISO = /^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}(:?\d{2})?)?)?$/;
 
   function loadCfg() {
+    if (FIXED) return;
     try {
       var s = JSON.parse(localStorage.getItem("sb-contacts-cfg") || "null");
       if (s && s.url && s.key) { state.url = s.url; state.key = s.key; }
@@ -1010,6 +1014,7 @@
   });
 
   loadCfg();
+  if (FIXED) $("btn-settings").hidden = true;
   loadSession();
   if (state.session && cfgOk()) {
     if (!state.role) signOutLocal("La sessione salvata non contiene un ruolo valido. Accedi di nuovo dopo aver assegnato app_metadata.role in Supabase.");
