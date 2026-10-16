@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Anteprima tabella</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Idea: una "tabella tabellone". Intestazione blu a gradiente, prima colonna azzurra a strisce,
+     celle bianche separate da ombre morbide, una colonna gialla che segue l'ordinamento.
+     Sotto i 720px ogni riga diventa una scheda con la stessa grammatica di colori. */
+  :root {
+    --bg: #e9eef5;
+    --fg: #18222e;
+    --muted: #5a6878;
+    --line: #d9e0ea;
+    --cell: #ffffff;
+    --cell-shade: #e6ebf2;
+    --hover: #f2f6fc;
+    --edge: rgba(12, 38, 84, .22);
+    --hdr-a: #0a3586;
+    --hdr-b: #0f56bf;
+    --hdr-hi-a: #072a68;
+    --hdr-hi-b: #0a3d8f;
+    --first: #0f7bb5;
+    --first-edge: rgba(255, 255, 255, .28);
+    --first-shade: rgba(0, 28, 60, .36);
+    --hi: #ffd23f;
+    --hi-2: #f6c11a;
+    --hi-fg: #2b2200;
+    --sel: #0f56bf;
+    --shadow: rgba(8, 30, 70, .5);
+    --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0a1020;
+      --fg: #e8eef7;
+      --muted: #9db1ca;
+      --line: #22304a;
+      --cell: #131c2d;
+      --cell-shade: #0e1626;
+      --hover: #19243a;
+      --edge: rgba(0, 0, 0, .45);
+      --hdr-a: #0b2a63;
+      --hdr-b: #10408f;
+      --hdr-hi-a: #061c45;
+      --hdr-hi-b: #0a2c68;
+      --first: #12608a;
+      --first-edge: rgba(255, 255, 255, .16);
+      --first-shade: rgba(0, 10, 30, .5);
+      --hi: #e0ab08;
+      --hi-2: #c99600;
+      --hi-fg: #1a1300;
+      --sel: #6aa9ff;
+      --shadow: rgba(0, 0, 0, .7);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a1020;
+    --fg: #e8eef7;
+    --muted: #9db1ca;
+    --line: #22304a;
+    --cell: #131c2d;
+    --cell-shade: #0e1626;
+    --hover: #19243a;
+    --edge: rgba(0, 0, 0, .45);
+    --hdr-a: #0b2a63;
+    --hdr-b: #10408f;
+    --hdr-hi-a: #061c45;
+    --hdr-hi-b: #0a2c68;
+    --first: #12608a;
+    --first-edge: rgba(255, 255, 255, .16);
+    --first-shade: rgba(0, 10, 30, .5);
+    --hi: #e0ab08;
+    --hi-2: #c99600;
+    --hi-fg: #1a1300;
+    --sel: #6aa9ff;
+    --shadow: rgba(0, 0, 0, .7);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { color-scheme: light; -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 15px/1.5 var(--font-body);
+    padding-block: 28px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 18px; min-width: 0; }
+  .wrap > * { min-width: 0; }
+  h1 { margin: 0; font: 700 clamp(1.5rem, 1.1rem + 1.8vw, 2.1rem)/1.15 var(--font-display); letter-spacing: -.01em; text-wrap: balance; }
+  .note { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+
+  .sortbar { display: none; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+  .sortbar label { flex: 1 0 100%; font: 600 11px var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .sortbar button { white-space: nowrap; flex: none; }
+  .sortbar select, .sortbar button {
+    font: 16px var(--font-body);
+    min-height: 44px;
+    color: var(--fg);
+    background: var(--cell);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+  .sortbar select { flex: 1 1 auto; min-width: 0; }
+
+  .board {
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--cell);
+    box-shadow: 0 22px 44px -20px var(--shadow), 0 2px 6px rgba(8, 30, 70, .14);
+  }
+  .scroller { overflow-x: auto; }
+  table { width: 100%; min-width: 720px; border-collapse: separate; border-spacing: 0; }
+
+  thead th {
+    background: linear-gradient(180deg, var(--hdr-a), var(--hdr-b));
+    color: #fff;
+    font: 600 14px/1.25 var(--font-display);
+    text-align: center;
+    padding: 26px 14px;
+    vertical-align: middle;
+    box-shadow: inset 1px 0 0 rgba(255, 255, 255, .09);
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th[aria-sort] { background: linear-gradient(180deg, var(--hdr-hi-a), var(--hdr-hi-b)); }
+  thead th .arrow { display: block; margin-top: 4px; font-size: 10px; line-height: 1; opacity: .9; height: 10px; }
+  thead th:first-child { text-align: left; padding-left: 28px; cursor: default; box-shadow: none; width: 30%; }
+  .t { display: block; font: 600 clamp(1.05rem, .9rem + .6vw, 1.35rem)/1.15 var(--font-display); letter-spacing: .06em; text-transform: uppercase; }
+  .s { display: block; margin-top: 6px; font: 400 13px var(--font-body); letter-spacing: .02em; opacity: .85; }
+
+  td {
+    height: 62px;
+    padding: 0 16px;
+    text-align: center;
+    color: var(--fg);
+    background: linear-gradient(180deg, var(--cell) 0, var(--cell) 68%, var(--cell-shade) 100%);
+    box-shadow: inset 8px 0 9px -9px var(--edge), inset -8px 0 9px -9px var(--edge);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 260px;
+  }
+  td:first-child {
+    max-width: none;
+    text-align: left;
+    padding-left: 28px;
+    background: var(--first);
+    color: #fff;
+    font: 500 15px var(--font-display);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    box-shadow: inset 0 -1px 0 var(--first-edge), inset 0 -12px 14px -14px var(--first-shade);
+  }
+  td.hi {
+    background: linear-gradient(180deg, var(--hi) 0, var(--hi) 62%, var(--hi-2) 100%);
+    color: var(--hi-fg);
+    font-weight: 600;
+  }
+  tbody tr { cursor: pointer; }
+  @media (prefers-reduced-motion: no-preference) { td { transition: background-color .15s; } }
+
+  @media (min-width: 720px) and (hover: hover) {
+    tbody tr:hover td:not(:first-child):not(.hi) { background: var(--hover); }
+    tbody tr:hover td:first-child { filter: brightness(1.08); }
+  }
+  @media (min-width: 720px) {
+    tbody tr.sel td { box-shadow: inset 0 3px 0 var(--sel), inset 0 -3px 0 var(--sel); }
+    tbody tr.sel td:first-child { box-shadow: inset 4px 0 0 var(--hi), inset 0 3px 0 var(--sel), inset 0 -3px 0 var(--sel); }
+    tbody tr.sel td:last-child { box-shadow: inset -4px 0 0 var(--sel), inset 0 3px 0 var(--sel), inset 0 -3px 0 var(--sel); }
+  }
+
+  :focus-visible { outline: 3px solid var(--sel); outline-offset: 2px; }
+  thead th:focus-visible { outline-color: #fff; outline-offset: -5px; }
+  tbody tr:focus-visible { outline-offset: -3px; }
+
+  .foot { color: var(--muted); font-size: 13px; }
+
+  @media (max-width: 719px) {
+    .sortbar { display: flex; }
+    .board { background: transparent; box-shadow: none; border-radius: 0; overflow: visible; }
+    .scroller { overflow: visible; }
+    table, tbody, tr, td { display: block; }
+    table { min-width: 0; }
+    thead { display: none; }
+    tbody tr {
+      margin-bottom: 14px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--cell);
+      box-shadow: 0 12px 26px -16px var(--shadow), 0 1px 3px rgba(8, 30, 70, .16);
+    }
+    tbody tr.sel { outline: 3px solid var(--sel); outline-offset: -3px; }
+    td {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      height: auto;
+      min-height: 46px;
+      max-width: none;
+      padding: 10px 16px;
+      text-align: right;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      background: var(--cell);
+      box-shadow: inset 0 -1px 0 var(--line);
+    }
+    td::before {
+      content: attr(data-label);
+      flex: none;
+      font: 600 11px/1.2 var(--font-body);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    td:first-child { display: block; text-align: left; padding: 15px 16px; font-size: 16px; background: var(--first); box-shadow: none; }
+    td:first-child::before { display: none; }
+    td.hi { background: var(--hi); }
+    td.hi::before { color: var(--hi-fg); opacity: .7; }
+    tbody tr td:last-child { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Anteprima della tabella</h1>
+    <p class="note">Dati di esempio. La colonna gialla segue l'ordinamento: clicca o tocca un'intestazione per cambiarla. Una riga si seleziona con un clic.</p>
+  </header>
+
+  <div class="sortbar">
+    <label for="sortsel">Ordina per</label>
+    <select id="sortsel"></select>
+    <button id="sortdir" type="button"></button>
+  </div>
+
+  <div class="board">
+    <div class="scroller">
+      <table id="tbl" role="table" aria-label="Contatti di esempio">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <p class="foot" id="foot"></p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var COLS = [
+    { k: "nome", label: "Contatto" },
+    { k: "azienda", label: "Azienda" },
+    { k: "telefono", label: "Telefono" },
+    { k: "email", label: "Email" },
+    { k: "dal", label: "Cliente dal", date: true }
+  ];
+  var DATA = [
+    { nome: "Giulia Bianchi", azienda: "Studio Tecnico Bianchi", telefono: "+39 02 5550 0101", email: "giulia.bianchi@esempio.it", dal: "2021-03-12" },
+    { nome: "Marco Rossi", azienda: "Rossi Impianti", telefono: "+39 335 555 0102", email: "m.rossi@esempio.it", dal: "2019-11-04" },
+    { nome: "Chiara Verdi", azienda: "Verdi & Partners", telefono: "+39 011 5550 103", email: "chiara.verdi@esempio.it", dal: "2023-06-21" },
+    { nome: "Luca Neri", azienda: "Neri Logistica", telefono: "+39 347 555 0104", email: "luca.neri@esempio.it", dal: "2022-01-17" },
+    { nome: "Sara Gallo", azienda: "Gallo Consulting", telefono: "+39 051 5550 105", email: "sara.gallo@esempio.it", dal: "2024-09-02" },
+    { nome: "Paolo Ferrari", azienda: "Ferrari Serramenti", telefono: "+39 045 5550 106", email: "p.ferrari@esempio.it", dal: "2020-05-28" },
+    { nome: "Elena Costa", azienda: "Costa Alimentari", telefono: "+39 06 5550 0107", email: "elena.costa@esempio.it", dal: "2018-02-09" },
+    { nome: "Davide Moretti", azienda: "Moretti Studio Legale", telefono: "+39 049 5550 108", email: "d.moretti@esempio.it", dal: "2025-04-15" }
+  ];
+
+  var sort = { k: "dal", dir: "desc" };
+  var sel = null;
+  var $ = function (id) { return document.getElementById(id); };
+
+  function show(c, v) {
+    return c.date ? new Date(v + "T00:00:00").toLocaleDateString("it-IT") : v;
+  }
+  function setSort(k) {
+    if (sort.k === k) sort.dir = sort.dir === "asc" ? "desc" : "asc";
+    else { sort.k = k; sort.dir = "asc"; }
+    render();
+  }
+
+  function render() {
+    var rows = DATA.slice().sort(function (a, b) {
+      var r = String(a[sort.k]).localeCompare(String(b[sort.k]), "it");
+      return sort.dir === "asc" ? r : -r;
+    });
+
+    var tr = document.createElement("tr");
+    tr.setAttribute("role", "row");
+    COLS.forEach(function (c, i) {
+      var th = document.createElement("th");
+      th.setAttribute("role", "columnheader");
+      th.scope = "col";
+      if (i === 0) {
+        var t = document.createElement("span"); t.className = "t"; t.textContent = "Rubrica contatti";
+        var s = document.createElement("span"); s.className = "s"; s.textContent = rows.length + " contatti";
+        th.append(t, s);
+        tr.appendChild(th);
+        return;
+      }
+      th.tabIndex = 0;
+      th.append(document.createTextNode(c.label));
+      var arrow = document.createElement("span");
+      arrow.className = "arrow";
+      arrow.setAttribute("aria-hidden", "true");
+      if (c.k === sort.k) {
+        th.setAttribute("aria-sort", sort.dir === "asc" ? "ascending" : "descending");
+        arrow.textContent = sort.dir === "asc" ? "▲" : "▼";
+      }
+      th.appendChild(arrow);
+      th.addEventListener("click", function () { setSort(c.k); });
+      th.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSort(c.k); }
+      });
+      tr.appendChild(th);
+    });
+    $("tbl").tHead.replaceChildren(tr);
+
+    var frag = document.createDocumentFragment();
+    rows.forEach(function (r) {
+      var row = document.createElement("tr");
+      row.setAttribute("role", "row");
+      row.tabIndex = 0;
+      if (r.nome === sel) row.classList.add("sel");
+      COLS.forEach(function (c) {
+        var td = document.createElement("td");
+        td.setAttribute("role", "cell");
+        td.dataset.label = c.label;
+        if (c.k === sort.k) td.className = "hi";
+        var txt = show(c, r[c.k]);
+        td.textContent = txt;
+        td.title = txt;
+        row.appendChild(td);
+      });
+      var toggle = function () { sel = sel === r.nome ? null : r.nome; render(); };
+      row.addEventListener("click", toggle);
+      row.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+      });
+      frag.appendChild(row);
+    });
+    $("tbl").tBodies[0].replaceChildren(frag);
+
+    $("sortsel").value = sort.k;
+    $("sortdir").textContent = sort.dir === "asc" ? "↑ Crescente" : "↓ Decrescente";
+    $("foot").textContent = sel ? "Selezionato: " + sel : "Nessuna riga selezionata";
+  }
+
+  COLS.forEach(function (c) {
+    var o = document.createElement("option");
+    o.value = c.k;
+    o.textContent = c.label;
+    $("sortsel").appendChild(o);
+  });
+  $("sortsel").addEventListener("change", function (e) { sort.k = e.target.value; sort.dir = "asc"; render(); });
+  $("sortdir").addEventListener("click", function () { sort.dir = sort.dir === "asc" ? "desc" : "asc"; render(); });
+
+  render();
+})();
+</script>
+</body>
+</html>
